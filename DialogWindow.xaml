@@ -1,0 +1,21 @@
+﻿<Window x:Class="beforewindeploy.DialogWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:beforewindeploy"
+        mc:Ignorable="d"
+        xmlns:ui="http://schemas.inkore.net/lib/ui/wpf/modern"
+        ui:WindowHelper.UseModernWindowStyle="True"
+        ui:ThemeManager.RequestedTheme="Dark"
+        Title="DialogWindow" Height="180" Width="500" MaxHeight="180" MaxWidth="500" MinHeight="180" MinWidth="500" ResizeMode="NoResize" WindowStartupLocation="CenterScreen" Closing="Window_Closing" KeyDown="Window_KeyDown">
+    <Grid>
+        <Image Source="/imageres_98.ico" Height="32" Width="32" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="40,30,0,0" />
+        <TextBlock x:Name="messageContent" TextWrapping="WrapWithOverflow" Margin="88,32,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" FontSize="18" SizeChanged="messageContent_SizeChanged" MaxWidth="392">
+            Message
+        </TextBlock>
+        <Button x:Name="tryAgainButton" Content="Try Again" Margin="20,0,0,20" HorizontalAlignment="Left" VerticalAlignment="Bottom" Height="32" Width="145" Style="{DynamicResource AccentButtonStyle}" Click="tryAgainButton_Click"/>
+        <Button x:Name="offlineInstallButton" Content="Offline Install" Margin="0,0,0,20" HorizontalAlignment="Center" VerticalAlignment="Bottom" Height="32" Width="145" Click="offlineInstallButton_Click"/>
+        <Button x:Name="skipButton" Content="Skip" Margin="0,0,20,20" HorizontalAlignment="Right" VerticalAlignment="Bottom" Height="32" Width="145" Click="skipButton_Click"/>
+    </Grid>
+</Window>
