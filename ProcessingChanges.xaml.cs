@@ -726,7 +726,8 @@ namespace beforewindeploy
                     }
 
                     File.WriteAllText(Environment.GetFolderPath(Environment.SpecialFolder.Desktop) + @"\System Report.txt", $"======System Report======\n\n<Note the following down>\n{cpuName}\n{gpuName}\n{ramInfo}\n{storageSize}\n{batteryHealth}\n\n<Additional information>\nOriginal battery capacity: {Math.Round((double)designCapacity / 1000)}Wh\nFull charge capacity: {Math.Round((double)fullChargeCapacity / 1000)}Wh");
-                    iNKORE.UI.WPF.Modern.Controls.MessageBox.Show($"The system report has been saved to {Environment.GetFolderPath(Environment.SpecialFolder.Desktop) + @"\System Report.txt"}.", "Information", MessageBoxButton.OK, MessageBoxImage.Information);
+                    Process.Start("notepad.exe", Environment.GetFolderPath(Environment.SpecialFolder.Desktop) + @"\System Report.txt").WaitForExit();
+                    //iNKORE.UI.WPF.Modern.Controls.MessageBox.Show($"The system report has been saved to {Environment.GetFolderPath(Environment.SpecialFolder.Desktop) + @"\System Report.txt"}.", "Information", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
                 catch
                 {
@@ -1190,7 +1191,7 @@ namespace beforewindeploy
                         }
 
                         File.WriteAllText(Environment.GetFolderPath(Environment.SpecialFolder.Desktop) + @"\System Report.txt", $"======System Report======\n\n<Note the following down>\n{cpuName}\n{gpuName}\n{ramInfo}\n{storageSize}\n{batteryHealth}\n\n<Additional information>\nOriginal battery capacity: {Math.Round((double)designCapacity / 1000)}Wh\nFull charge capacity: {Math.Round((double)fullChargeCapacity / 1000)}Wh");
-                        iNKORE.UI.WPF.Modern.Controls.MessageBox.Show($"The system report has been saved to {Environment.GetFolderPath(Environment.SpecialFolder.Desktop) + @"\System Report.txt"}.", "Information", MessageBoxButton.OK, MessageBoxImage.Information);
+                        Process.Start("notepad.exe", Environment.GetFolderPath(Environment.SpecialFolder.Desktop) + @"\System Report.txt").WaitForExit();
                     } catch
                     {
                         iNKORE.UI.WPF.Modern.Controls.MessageBox.Show("There was an error generating the system report.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
