@@ -273,10 +273,10 @@ namespace beforewindeploy
                         {
                             processingChangesLabel.Content = "Connecting to the server...";
                             await Delay(500);
+                            XDocument serverCredentials = XDocument.Load(Environment.SystemDirectory + @"\oobe\Automation\Credentials.xml");
                             await Task.Run(() =>
                             {
-                                XDocument serverCredentials = XDocument.Load(@"C:\Windows\System32\oobe\Automation\Credentials.xml");
-                                var serverCredential = serverCredentials.Root.Elements().First();
+                                var serverCredential = serverCredentials.Root;
                                 var serverUsername = serverCredential.Element("Username").Value;
                                 var serverPassword = serverCredential.Element("Password").Value;
                                 Process mountNetworkDrive = new Process();
@@ -315,8 +315,8 @@ namespace beforewindeploy
                                 }
                                 processingChangesLabel.Content = "Connecting to the server (2nd attempt)...";
                                 await Delay(500);
-                                XDocument serverCredentials = XDocument.Load(@"C:\Windows\System32\oobe\Automation\Credentials.xml");
-                                var serverCredential = serverCredentials.Root.Elements().First();
+                                //XDocument serverCredentials = XDocument.Load(@"C:\Windows\System32\oobe\Automation\Credentials.xml");
+                                var serverCredential = serverCredentials.Root;
                                 var serverUsername = serverCredential.Element("Username").Value;
                                 var serverPassword = serverCredential.Element("Password").Value;
                                 Process mountNetworkDrive2 = new Process();
@@ -388,8 +388,8 @@ namespace beforewindeploy
                 }
 
                 // Install apps
-                XDocument credentials = XDocument.Load(@"C:\Windows\System32\oobe\Automation\Credentials.xml");
-                var credential = credentials.Root.Elements().First();
+                XDocument credentials = XDocument.Load(Environment.SystemDirectory + @"\oobe\Automation\Credentials.xml");
+                var credential = credentials.Root;
                 var username = credential.Element("Username").Value;
                 var password = credential.Element("Password").Value;
                 Process mountNetworkDrive3 = new Process();
@@ -491,7 +491,7 @@ namespace beforewindeploy
                                 {
                                     CompilerParameters parameters = new CompilerParameters();
                                     parameters.ReferencedAssemblies.Add("System.dll");
-                                    parameters.ReferencedAssemblies.Add(@"C:\Windows\System32\oobe\Automation\Interop.IWshRuntimeLibrary.dll");
+                                    parameters.ReferencedAssemblies.Add(Environment.SystemDirectory + @"\oobe\Automation\Interop.IWshRuntimeLibrary.dll");
                                     parameters.GenerateInMemory = true;
                                     CompilerResults results = new CSharpCodeProvider().CompileAssemblyFromSource(parameters, customcscode);
                                     if (results.Errors.Count > 0)
@@ -1029,7 +1029,7 @@ namespace beforewindeploy
                         ManagementObjectSearcher mos = new ManagementObjectSearcher("root\\CIMV2", "SELECT * FROM Win32_Processor");
                         foreach (ManagementObject mo in mos.Get())
                         {
-                            cpuName = "CPU: " + (string)mo["Name"];
+                            cpuName = $"CPU: {(string)mo["Name"]}".Replace("(R)", "").Replace("(TM)", "");
                         }
 
                         //GPU
@@ -1047,17 +1047,17 @@ namespace beforewindeploy
                                 else if (obj["Name"].ToString() == "AMD Radeon(TM) Graphics" || obj["Name"].ToString().Contains("Intel") && !obj["Name"].ToString().Contains("Intel Arc") && obj["Name"].ToString() != "Intel(R) Arc(TM) Graphics")
                                 {
                                     hasiGPU = true;
-                                    iGPUName = obj["Name"].ToString();
+                                    iGPUName = obj["Name"].ToString().Replace("(R)", "").Replace("(TM)", "");
                                 }
                                 else
                                 {
-                                    gpuName = "GPU: " + (string)obj["Name"];
+                                    gpuName = "GPU: " + obj["Name"].ToString().Replace("(R)", "").Replace("(TM)", "");
                                     break;
                                 }
                             }
                             if (gpuName == "" && hasiGPU == true)
                             {
-                                gpuName = "GPU: " + iGPUName + "(iGPU)";
+                                gpuName = $"GPU: {iGPUName} (iGPU)";
                             }
                         }
 
@@ -1067,7 +1067,7 @@ namespace beforewindeploy
 
                         ManagementObjectSearcher searcher2 = new ManagementObjectSearcher("Select * from Win32_PhysicalMemory");
                         var ramspeed = "";
-                        var newram = 0;
+                        var newram = 0L;
                         var newMemoryType = "";
                         foreach (ManagementObject obj in searcher2.Get())
                         {
@@ -1079,7 +1079,23 @@ namespace beforewindeploy
                         }
                         foreach (ManagementObject managementObject in managementObjectSearcher.Get())
                         {
-                            newram = Convert.ToInt32(managementObject["TotalVisibleMemorySize"]) / 1000 / 1000;
+                            long remainder = 0;
+                            newram = Convert.ToInt64(managementObject["TotalVisibleMemorySize"]) / 1000 / 1000;
+                            remainder = newram % 4;
+
+                            if (remainder == 0)
+                            {
+                                newram = Convert.ToInt64(managementObject["TotalVisibleMemorySize"]) / 1000 / 1000;
+                            }
+                            else if (remainder < 2)
+                            {
+                                newram -= remainder;
+                            }
+                            else
+                            {
+                                newram += 4 - remainder;
+                            }
+
                         }
                         foreach (ManagementObject managementObject in searcher2.Get())
                         {
@@ -1148,12 +1164,19 @@ namespace beforewindeploy
                             }
                         }
 
-                        ramInfo = "RAM: " + newram + "GB " + ramspeed + "MT/s " + newMemoryType;
+                        ramInfo = $"RAM: {newram} GB {newMemoryType}-{ramspeed}";
 
                         //Storage
                         DriveInfo mainDrive = new DriveInfo(System.IO.Path.GetPathRoot(Environment.GetFolderPath(Environment.SpecialFolder.System)));
                         var totalsize = mainDrive.TotalSize / 1000 / 1000 / 1000;
-                        storageSize = "Storage on Windows drive: " + totalsize + "GB";
+                        if (totalsize >= 1000)
+                        {
+                            storageSize = $"Storage on Windows drive: {Math.Round((double)totalsize / 1000, 1)}TB";
+                        }
+                        else
+                        {
+                            storageSize = $"Storage on Windows drive: {totalsize}GB";
+                        }
                         await Delay(200);
 
                         //Battery health
