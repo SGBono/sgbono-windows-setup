@@ -275,7 +275,7 @@ namespace beforewindeploy
                             await Delay(500);
                             await Task.Run(() =>
                             {
-                                XDocument serverCredentials = XDocument.Load(@"Credentials.xml");
+                                XDocument serverCredentials = XDocument.Load(@"C:\Windows\System32\oobe\Automation\Credentials.xml");
                                 var serverCredential = serverCredentials.Root.Elements().First();
                                 var serverUsername = serverCredential.Element("Username").Value;
                                 var serverPassword = serverCredential.Element("Password").Value;
@@ -315,7 +315,7 @@ namespace beforewindeploy
                                 }
                                 processingChangesLabel.Content = "Connecting to the server (2nd attempt)...";
                                 await Delay(500);
-                                XDocument serverCredentials = XDocument.Load(@"Credentials.xml");
+                                XDocument serverCredentials = XDocument.Load(@"C:\Windows\System32\oobe\Automation\Credentials.xml");
                                 var serverCredential = serverCredentials.Root.Elements().First();
                                 var serverUsername = serverCredential.Element("Username").Value;
                                 var serverPassword = serverCredential.Element("Password").Value;
@@ -388,7 +388,7 @@ namespace beforewindeploy
                 }
 
                 // Install apps
-                XDocument credentials = XDocument.Load(@"Credentials.xml");
+                XDocument credentials = XDocument.Load(@"C:\Windows\System32\oobe\Automation\Credentials.xml");
                 var credential = credentials.Root.Elements().First();
                 var username = credential.Element("Username").Value;
                 var password = credential.Element("Password").Value;
