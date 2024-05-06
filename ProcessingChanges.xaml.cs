@@ -1,28 +1,18 @@
-﻿using IWshRuntimeLibrary;
-using Microsoft.CSharp;
+﻿using Microsoft.CSharp;
 using Microsoft.Win32;
 using NAudio.CoreAudioApi;
-using NAudio.Utils;
 using System;
 using System.CodeDom.Compiler;
-using System.Collections.Generic;
-using System.Configuration.Assemblies;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Management;
-using System.Media;
 using System.Net;
-using System.Net.Http;
 using System.Net.NetworkInformation;
 using System.Reflection;
-using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Interop;
 using System.Windows.Media.Imaging;
 using System.Xml.Linq;
 using static beforewindeploy.DialogWindow;
@@ -35,31 +25,26 @@ namespace beforewindeploy
     /// </summary>
     public partial class ProcessingChanges : Window
     {
-
-        [DllImport("user32.dll")]
-        private static extern IntPtr GetSystemMenu(IntPtr hWnd, bool bRevert);
-        [DllImport("user32.dll")]
-        private static extern bool EnableMenuItem(IntPtr hMenu, uint uIDEnableItem, uint uEnable);
-        [DllImport("user32.dll")]
-        private static extern IntPtr DestroyMenu(IntPtr hWnd);
-
-        private const uint MF_BYCOMMAND = 0x00000000;
-        private const uint MF_GRAYED = 0x00000001;
-        private const uint SC_CLOSE = 0xF060;
-
-        IntPtr menuHandle;
-
+        // Audio device initialisation
         private MMDeviceEnumerator deviceEnumerator;
         private MMDevice defaultDevice;
+        // Load credentials from XML file
+        private XDocument credentials = XDocument.Load(Environment.SystemDirectory + @"\oobe\Automation\Credentials.xml");
+
         public ProcessingChanges(bool usbConfig, bool serverConfig, bool skip)
         {
             InitializeComponent();
+
+            // Audio device initialisation
             deviceEnumerator = new MMDeviceEnumerator();
             defaultDevice = deviceEnumerator.GetDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia);
             if (defaultDevice == null) muteButton.IsEnabled = false;
+
+            // Pass to actual installation code
             processChanges(usbConfig, serverConfig, skip);
         }
 
+        // Determines if device has successfully connected to Wi-Fi by pinging local IP
         static async Task<bool> IsWiFiConnected()
         {
             try
@@ -81,9 +66,12 @@ namespace beforewindeploy
             }
         }
 
+        // Handles which profiles to execute based on user choice
         private async void processChanges(bool usbConfig, bool serverConfig, bool skip)
         {
             iNKORE.UI.WPF.Modern.ThemeManager.Current.ApplicationTheme = iNKORE.UI.WPF.Modern.ApplicationTheme.Dark;
+            
+            // Initialise audio status
             if (defaultDevice.AudioEndpointVolume.Mute == true)
             {
                 muteButton.Content = new Image
@@ -106,6 +94,7 @@ namespace beforewindeploy
             }
             defaultDevice.AudioEndpointVolume.OnVolumeNotification += OnVolumeNotification;
 
+            // Skip button pressed
             if (usbConfig == false && serverConfig == false)
             {
                 /*try
@@ -128,26 +117,29 @@ namespace beforewindeploy
                     iNKORE.UI.WPF.Modern.Controls.MessageBox.Show("There was an error disabling SMBv1. You will need to disable it manually.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 }*/
                 processingChangesLabel.Content = "Cleaning up...";
-                File.Delete(@"C:\Windows\System32\TaskbarLayoutModifcation.xml");
-                File.Delete(@"C:\Users\Public\Desktop\Shutdown PC.lnk");
+                File.Delete(Environment.SystemDirectory + @"\TaskbarLayoutModifcation.xml");
+                File.Delete(Environment.GetFolderPath(Environment.SpecialFolder.CommonDesktopDirectory) + @"\Shutdown PC.lnk");
                 RegistryKey localMachine = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer", true);
                 localMachine.DeleteValue("LayoutXMLPath");
                 localMachine.Dispose();
                 Process process3 = new Process();
                 process3.StartInfo.FileName = "cmd.exe";
-                process3.StartInfo.Arguments = @"/c timeout /t 10 && rd ""C:\Windows\System32\oobe\Automation"" /s /q";
+                process3.StartInfo.Arguments = $@"/c timeout /t 10 && rd ""{Environment.SystemDirectory}\oobe\Automation"" /s /q";
                 process3.StartInfo.CreateNoWindow = true;
                 process3.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
                 process3.Start();
                 await Delay(5000);
                 Process.GetCurrentProcess().Kill();
             }
+
+            // USB Config button pressed
             if (usbConfig == true)
             {
                 USBConfig();
             }
-            else
-            if (serverConfig == true)
+
+            // Server Config button pressed
+            else if (serverConfig == true)
             {
                 processingChangesLabel.Content = "Terminating Explorer...";
                 await Delay(500);
@@ -182,15 +174,27 @@ namespace beforewindeploy
                                 process.StartInfo = startInfo;
                                 process.Start();
                                 Directory.CreateDirectory(@"C:\SGBono\Windows 11 Debloated");
-                                File.WriteAllText(@"C:\SGBono\Windows 11 Debloated\SGBono Internal.xml", Properties.Resources.SGBono);
-                                process.StandardInput.WriteLine("wlan add profile filename=\"C:\\SGBono\\Windows 11 Debloated\\SGBono Internal.xml\"");
-                                process.StandardInput.WriteLine($"wlan connect name=\"SGBono Internal\" ssid=\"SGBono Internal\" interface=\"Wi-Fi\"");
+                                File.WriteAllText(@"C:\SGBono\Windows 11 Debloated\WiFiTemplate.xml", Properties.Resources.WiFiTemplate);
+
+                                var ssid = credentials.Root.Element("Router").Element("SSID").Value;
+                                var routerpassword = credentials.Root.Element("Router").Element("Password").Value;
+                                var securityprotocol = credentials.Root.Element("Router").Element("SecurityProtocol").Value;
+                                
+                                XDocument wifiTemplate = XDocument.Load(@"C:\SGBono\Windows 11 Debloated\WiFiTemplate.xml");
+                                wifiTemplate.Root.Element("name").Value = ssid;
+                                wifiTemplate.Root.Element("SSIDConfig").Element("SSID").Element("name").Value = ssid;
+                                wifiTemplate.Root.Element("MSM").Element("security").Element("sharedKey").Element("keyMaterial").Value = routerpassword;
+                                wifiTemplate.Root.Element("MSM").Element("security").Element("authEncryption").Element("authentication").Value = securityprotocol;
+                                wifiTemplate.Save(@"C:\SGBono\Windows 11 Debloated\WiFiTemplate.xml");
+
+                                process.StandardInput.WriteLine("wlan add profile filename=\"C:\\SGBono\\Windows 11 Debloated\\WiFiTemplate.xml\"");
+                                process.StandardInput.WriteLine($"wlan connect name=\"{ssid}\" ssid=\"{ssid}\" interface=\"Wi-Fi\"");
                                 process.StandardInput.Close();
 
                                 ProcessStartInfo connectInfo = new ProcessStartInfo
                                 {
                                     FileName = "netsh",
-                                    Arguments = "wlan connect name=\"SGBono Internal\"",
+                                    Arguments = $"wlan connect name=\"{ssid}\"",
                                     RedirectStandardOutput = true,
                                     RedirectStandardError = true,
                                     UseShellExecute = false,
@@ -219,8 +223,6 @@ namespace beforewindeploy
 
                                 process.WaitForExit();
                                 break;
-
-
                             }
                         }
                         catch (Exception ex)
@@ -254,7 +256,8 @@ namespace beforewindeploy
                                 }
                             }
                         }
-                    } catch (Exception ex)
+                    }
+                    catch (Exception ex)
                     {
                         if (ex.Message == "Moving to offline install!")
                         {
@@ -378,7 +381,8 @@ namespace beforewindeploy
                                 }
                             }
                         }
-                    } catch (Exception ex)
+                    }
+                    catch (Exception ex)
                     {
                         if (ex.Message == "Moving to offline install!")
                         {
@@ -388,7 +392,7 @@ namespace beforewindeploy
                 }
 
                 // Install apps
-                XDocument credentials = XDocument.Load(Environment.SystemDirectory + @"\oobe\Automation\Credentials.xml");
+                //XDocument credentials = XDocument.Load(Environment.SystemDirectory + @"\oobe\Automation\Credentials.xml");
                 var credential = credentials.Root;
                 var username = credential.Element("Username").Value;
                 var password = credential.Element("Password").Value;
@@ -541,7 +545,8 @@ namespace beforewindeploy
                             });
                         }
                     };
-                } catch (Exception ex)
+                }
+                catch (Exception ex)
                 {
                     if (ex.Message == "Moving to offline install!")
                     {
@@ -809,21 +814,6 @@ namespace beforewindeploy
             await Task.Delay(howlong);
         }
 
-        private IntPtr _windowHandle;
-        IntPtr handle;
-        private void Window_Loaded(object sender, RoutedEventArgs e)
-        {
-            _windowHandle = new WindowInteropHelper(this).Handle;
-            if (_windowHandle == null)
-                throw new InvalidOperationException("The window has not yet been completely initialized");
-
-            menuHandle = GetSystemMenu(_windowHandle, false);
-            if (menuHandle != IntPtr.Zero)
-            {
-                EnableMenuItem(menuHandle, SC_CLOSE, MF_BYCOMMAND | MF_GRAYED);
-            }
-        }
-
         private void MoveToOfflineInstall()
         {
             bool validDriverUSB = false;
@@ -898,7 +888,7 @@ namespace beforewindeploy
                                     catch (Exception ex)
                                     {
                                         //iNKORE.UI.WPF.Modern.Controls.MessageBox.Show("An unknown error occurred while attempting to launch the driver install utility.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                                        DialogWindow dialogWindow = new DialogWindow($"An error occurred while attempting to launch the driver install utility. "+ex.Message+"\nTry again?", "Error", true);
+                                        DialogWindow dialogWindow = new DialogWindow($"An error occurred while attempting to launch the driver install utility. " + ex.Message + "\nTry again?", "Error", true);
                                         dialogWindow.ShowDialog();
                                         if (dialogWindow.Result == DialogMessageBoxResult.Skip)
                                         {
@@ -914,7 +904,8 @@ namespace beforewindeploy
                                                 ignoreError = true;
                                                 throw new Exception("Moving to offline install!");
                                             }
-                                        } else
+                                        }
+                                        else
                                         {
                                             MoveToOfflineInstall();
                                             ignoreError = true;
@@ -986,7 +977,7 @@ namespace beforewindeploy
                             }
                         }
                     }
-                    catch (Exception ex) 
+                    catch (Exception ex)
                     {
                         if (ex.Message == "Moving to offline install!")
                         {
@@ -1215,7 +1206,8 @@ namespace beforewindeploy
 
                         File.WriteAllText(Environment.GetFolderPath(Environment.SpecialFolder.Desktop) + @"\System Report.txt", $"======System Report======\n\n<Note the following down>\n{cpuName}\n{gpuName}\n{ramInfo}\n{storageSize}\n{batteryHealth}\n\n<Additional information>\nOriginal battery capacity: {Math.Round((double)designCapacity / 1000)}Wh\nFull charge capacity: {Math.Round((double)fullChargeCapacity / 1000)}Wh");
                         Process.Start("notepad.exe", Environment.GetFolderPath(Environment.SpecialFolder.Desktop) + @"\System Report.txt").WaitForExit();
-                    } catch
+                    }
+                    catch
                     {
                         iNKORE.UI.WPF.Modern.Controls.MessageBox.Show("There was an error generating the system report.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     }
@@ -1246,7 +1238,7 @@ namespace beforewindeploy
                         process.WaitForExit();
                         Process process2 = new Process();
                         process2.StartInfo.FileName = "netsh";
-                        process2.StartInfo.Arguments = "wlan delete profile name=\"SGBono-Hotspot\"";
+                        process2.StartInfo.Arguments = "wlan delete profile name=\"SGBono Internal\"";
                         process2.StartInfo.RedirectStandardOutput = true;
                         process2.StartInfo.UseShellExecute = false;
                         process2.StartInfo.CreateNoWindow = true;
