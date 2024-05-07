@@ -174,6 +174,7 @@ namespace beforewindeploy
 
                                 process.StartInfo = startInfo;
                                 process.Start();
+
                                 // Create temp directory and write WiFiTemplate.xml
                                 Directory.CreateDirectory(@"C:\SGBono\Windows 11 Debloated");
                                 File.WriteAllText(@"C:\SGBono\Windows 11 Debloated\WiFiTemplate.xml", Properties.Resources.WiFiTemplate);
@@ -292,7 +293,7 @@ namespace beforewindeploy
                                 var serverPassword = credentials.Element("Password").Value;
                                 Process mountNetworkDrive = new Process();
                                 mountNetworkDrive.StartInfo.FileName = "net.exe";
-                                mountNetworkDrive.StartInfo.Arguments = $@"use Z: \\SGBonoServ\Drivers /user:{serverUsername} {serverPassword}";
+                                mountNetworkDrive.StartInfo.Arguments = $@"use Z: \\{credentials.Root.Element("VNCPath").Value}\Drivers /user:{serverUsername} {serverPassword}";
                                 mountNetworkDrive.StartInfo.UseShellExecute = false;
                                 mountNetworkDrive.StartInfo.RedirectStandardOutput = true;
                                 mountNetworkDrive.StartInfo.CreateNoWindow = true;
@@ -333,7 +334,7 @@ namespace beforewindeploy
                                 var serverPassword = serverCredential.Element("Password").Value;
                                 Process mountNetworkDrive2 = new Process();
                                 mountNetworkDrive2.StartInfo.FileName = "net.exe";
-                                mountNetworkDrive2.StartInfo.Arguments = $@"use Z: \\SGBonoServ\Drivers /user:{serverUsername} {serverPassword}";
+                                mountNetworkDrive2.StartInfo.Arguments = $@"use Z: \\{credentials.Root.Element("VNCPath").Value}\Drivers /user:{serverUsername} {serverPassword}";
                                 mountNetworkDrive2.StartInfo.UseShellExecute = false;
                                 mountNetworkDrive2.StartInfo.RedirectStandardOutput = true;
                                 mountNetworkDrive2.StartInfo.CreateNoWindow = true;
@@ -409,7 +410,7 @@ namespace beforewindeploy
                 var password = credential.Element("Password").Value;
                 Process mountNetworkDrive3 = new Process();
                 mountNetworkDrive3.StartInfo.FileName = "net.exe";
-                mountNetworkDrive3.StartInfo.Arguments = $@"use Y: \\SGBonoServ\Software /user:{username} {password}";
+                mountNetworkDrive3.StartInfo.Arguments = $@"use Y: \\{credentials.Root.Element("VNCPath").Value}\Software /user:{username} {password}";
                 mountNetworkDrive3.StartInfo.UseShellExecute = false;
                 mountNetworkDrive3.StartInfo.RedirectStandardOutput = true;
                 mountNetworkDrive3.StartInfo.CreateNoWindow = true;
