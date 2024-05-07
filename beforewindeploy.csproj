@@ -17,20 +17,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="7zip.png" />
-    <None Remove="brave.png" />
-    <None Remove="chrome.png" />
     <None Remove="Credentials.xml" />
-    <None Remove="firefox.png" />
     <None Remove="imageres_98.ico" />
-    <None Remove="ProcessHacker.png" />
     <None Remove="SGBono.xml" />
     <None Remove="speakerMute.png" />
     <None Remove="speakerUnmute.png" />
-    <None Remove="steam.png" />
-    <None Remove="vlc.png" />
-    <None Remove="WindowsCritical %28Custom%29.png" />
-    <None Remove="zoom.png" />
   </ItemGroup>
 
   <ItemGroup>
