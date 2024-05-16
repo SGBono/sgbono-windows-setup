@@ -185,11 +185,12 @@ namespace beforewindeploy
                                 var securityprotocol = credentials.Root.Element("Router").Element("SecurityProtocol").Value;
                                 
                                 // Writes reference values to WiFiTemplate.xml
+                                XNamespace xmlNamespace = "http://www.microsoft.com/networking/WLAN/profile/v1";
                                 XDocument wifiTemplate = XDocument.Load(@"C:\SGBono\Windows 11 Debloated\WiFiTemplate.xml");
-                                wifiTemplate.Root.Element("name").Value = ssid;
-                                wifiTemplate.Root.Element("SSIDConfig").Element("SSID").Element("name").Value = ssid;
-                                wifiTemplate.Root.Element("MSM").Element("security").Element("sharedKey").Element("keyMaterial").Value = routerpassword;
-                                wifiTemplate.Root.Element("MSM").Element("security").Element("authEncryption").Element("authentication").Value = securityprotocol;
+                                wifiTemplate.Root.Element(xmlNamespace + "name").Value = ssid;
+                                wifiTemplate.Root.Element(xmlNamespace + "SSIDConfig").Element(xmlNamespace + "SSID").Element(xmlNamespace + "name").Value = ssid;
+                                wifiTemplate.Root.Element(xmlNamespace + "MSM").Element(xmlNamespace + "security").Element(xmlNamespace + "sharedKey").Element(xmlNamespace + "keyMaterial").Value = routerpassword;
+                                wifiTemplate.Root.Element(xmlNamespace + "MSM").Element(xmlNamespace + "security").Element(xmlNamespace + "authEncryption").Element(xmlNamespace + "authentication").Value = securityprotocol;
                                 wifiTemplate.Save(@"C:\SGBono\Windows 11 Debloated\WiFiTemplate.xml");
 
                                 // Connect to network by importing WiFiTemplate.xml
@@ -289,8 +290,8 @@ namespace beforewindeploy
                             await Task.Run(() =>
                             {
                                 var serverCredential = credentials.Root;
-                                var serverUsername = credentials.Element("Username").Value;
-                                var serverPassword = credentials.Element("Password").Value;
+                                var serverUsername = credentials.Root.Element("Username").Value;
+                                var serverPassword = credentials.Root.Element("Password").Value;
                                 Process mountNetworkDrive = new Process();
                                 mountNetworkDrive.StartInfo.FileName = "net.exe";
                                 mountNetworkDrive.StartInfo.Arguments = $@"use Z: \\{credentials.Root.Element("VNCPath").Value}\Drivers /user:{serverUsername} {serverPassword}";
@@ -515,7 +516,7 @@ namespace beforewindeploy
                                 {
                                     CompilerParameters parameters = new CompilerParameters();
                                     parameters.ReferencedAssemblies.Add("System.dll");
-                                    parameters.ReferencedAssemblies.Add(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location) + @"\Credentials.xml");
+                                    parameters.ReferencedAssemblies.Add(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location) + @"\Interop.IWshRuntimeLibrary.dll");
                                     parameters.GenerateInMemory = true;
                                     CompilerResults results = new CSharpCodeProvider().CompileAssemblyFromSource(parameters, customcscode);
                                     

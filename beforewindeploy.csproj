@@ -22,6 +22,7 @@
     <None Remove="SGBono.xml" />
     <None Remove="speakerMute.png" />
     <None Remove="speakerUnmute.png" />
+    <None Remove="WiFiTemplate.xml" />
   </ItemGroup>
 
   <ItemGroup>
@@ -48,6 +49,7 @@
     <Resource Include="SGBono.xml" />
     <Resource Include="speakerMute.png" />
     <Resource Include="speakerUnmute.png" />
+    <Resource Include="WiFiTemplate.xml" />
   </ItemGroup>
 
   <ItemGroup>
