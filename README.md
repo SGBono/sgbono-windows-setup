@@ -55,9 +55,9 @@ Strict precautions MUST be made as the security of these machines we are giving 
 - Regular pentesting
   
 
-## We would also like to remind all volunteers to remain vigilant and report ANY suspicious behaviour IMMEDIATELY to the head developer (Chin Ray) or the coordinator of volunteers (Xuan Han). 
+**We would also like to remind all volunteers to remain vigilant and report ANY suspicious behaviour IMMEDIATELY to the head developer (Chin Ray) or the coordinator of volunteers (Xuan Han).**
 
-## Look out for rogue access points matching our router's SSID, discrepancies with the software's functionality or unusual behaviour with the Windows install in general.
+**Look out for rogue access points matching our router's SSID, discrepancies with the software's functionality or unusual behaviour with the Windows install in general.**
 
 # Using this app
 
