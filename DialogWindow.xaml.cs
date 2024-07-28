@@ -22,6 +22,7 @@ namespace beforewindeploy
     public partial class DialogWindow : Window
     {
         private bool canClose = false;
+        
         public enum DialogMessageBoxResult
         {
             TryAgain,
