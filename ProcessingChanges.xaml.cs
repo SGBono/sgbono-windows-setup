@@ -1316,6 +1316,19 @@ namespace beforewindeploy
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
             e.Cancel = true;
+            var result = iNKORE.UI.WPF.Modern.Controls.MessageBox.Show("Are you sure you want to exit?", "Exit", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+            if (result == MessageBoxResult.Yes)
+            {
+                var result2 = iNKORE.UI.WPF.Modern.Controls.MessageBox.Show("Do you want to restart the app?", "Exit", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+                if (result2 == MessageBoxResult.Yes)
+                {
+                    Process process = new Process();
+                    process.StartInfo.FileName = Assembly.GetExecutingAssembly().Location;
+                    process.StartInfo.Verb = "runas";
+                    process.Start();
+                }
+                Process.GetCurrentProcess().Kill();
+            }
         }
 
         // Event handler for when the mute button is clicked
