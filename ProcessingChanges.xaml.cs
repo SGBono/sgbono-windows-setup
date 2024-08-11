@@ -1,28 +1,18 @@
-﻿using IWshRuntimeLibrary;
-using Microsoft.CSharp;
+﻿using Microsoft.CSharp;
 using Microsoft.Win32;
 using NAudio.CoreAudioApi;
-using NAudio.Utils;
 using System;
 using System.CodeDom.Compiler;
-using System.Collections.Generic;
-using System.Configuration.Assemblies;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Management;
-using System.Media;
 using System.Net;
-using System.Net.Http;
 using System.Net.NetworkInformation;
 using System.Reflection;
-using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Interop;
 using System.Windows.Media.Imaging;
 using System.Xml.Linq;
 using static beforewindeploy.DialogWindow;
@@ -35,37 +25,33 @@ namespace beforewindeploy
     /// </summary>
     public partial class ProcessingChanges : Window
     {
-
-        [DllImport("user32.dll")]
-        private static extern IntPtr GetSystemMenu(IntPtr hWnd, bool bRevert);
-        [DllImport("user32.dll")]
-        private static extern bool EnableMenuItem(IntPtr hMenu, uint uIDEnableItem, uint uEnable);
-        [DllImport("user32.dll")]
-        private static extern IntPtr DestroyMenu(IntPtr hWnd);
-
-        private const uint MF_BYCOMMAND = 0x00000000;
-        private const uint MF_GRAYED = 0x00000001;
-        private const uint SC_CLOSE = 0xF060;
-
-        IntPtr menuHandle;
-
+        // Audio device initialisation
         private MMDeviceEnumerator deviceEnumerator;
         private MMDevice defaultDevice;
+
+        // Load credentials from XML file
+        private static XDocument credentials = XDocument.Load(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location) + @"\Credentials.xml");
+
         public ProcessingChanges(bool usbConfig, bool serverConfig, bool skip)
         {
             InitializeComponent();
+
+            // Audio device initialisation
             deviceEnumerator = new MMDeviceEnumerator();
             defaultDevice = deviceEnumerator.GetDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia);
             if (defaultDevice == null) muteButton.IsEnabled = false;
+
+            // Pass to actual installation code
             processChanges(usbConfig, serverConfig, skip);
         }
 
+        // Determines if device has successfully connected to Wi-Fi by pinging local IP
         static async Task<bool> IsWiFiConnected()
         {
             try
             {
                 Ping ping = new Ping();
-                PingReply reply = await ping.SendPingAsync("192.168.0.1");
+                PingReply reply = await ping.SendPingAsync(credentials.Root.Element("Router").Element("AddressToPing").Value);
                 if (reply.Status == IPStatus.Success)
                 {
                     return true;
@@ -81,9 +67,12 @@ namespace beforewindeploy
             }
         }
 
+        // Handles which profiles to execute based on user choice
         private async void processChanges(bool usbConfig, bool serverConfig, bool skip)
         {
             iNKORE.UI.WPF.Modern.ThemeManager.Current.ApplicationTheme = iNKORE.UI.WPF.Modern.ApplicationTheme.Dark;
+            
+            // Initialise audio status
             if (defaultDevice.AudioEndpointVolume.Mute == true)
             {
                 muteButton.Content = new Image
@@ -106,6 +95,7 @@ namespace beforewindeploy
             }
             defaultDevice.AudioEndpointVolume.OnVolumeNotification += OnVolumeNotification;
 
+            // Skip button pressed
             if (usbConfig == false && serverConfig == false)
             {
                 /*try
@@ -128,26 +118,29 @@ namespace beforewindeploy
                     iNKORE.UI.WPF.Modern.Controls.MessageBox.Show("There was an error disabling SMBv1. You will need to disable it manually.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 }*/
                 processingChangesLabel.Content = "Cleaning up...";
-                File.Delete(@"C:\Windows\System32\TaskbarLayoutModifcation.xml");
-                File.Delete(@"C:\Users\Public\Desktop\Shutdown PC.lnk");
+                File.Delete(Environment.SystemDirectory + @"\TaskbarLayoutModifcation.xml");
+                File.Delete(Environment.GetFolderPath(Environment.SpecialFolder.CommonDesktopDirectory) + @"\Shutdown PC.lnk");
                 RegistryKey localMachine = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer", true);
                 localMachine.DeleteValue("LayoutXMLPath");
                 localMachine.Dispose();
                 Process process3 = new Process();
                 process3.StartInfo.FileName = "cmd.exe";
-                process3.StartInfo.Arguments = @"/c timeout /t 10 && rd ""C:\Windows\System32\oobe\Automation"" /s /q";
+                process3.StartInfo.Arguments = $@"/c timeout /t 10 && rd ""{Path.GetDirectoryName(Assembly.GetEntryAssembly().Location)} "" /s /q";
                 process3.StartInfo.CreateNoWindow = true;
                 process3.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
                 process3.Start();
                 await Delay(5000);
                 Process.GetCurrentProcess().Kill();
             }
+
+            // USB Config button pressed
             if (usbConfig == true)
             {
                 USBConfig();
             }
-            else
-            if (serverConfig == true)
+
+            // Server Config button pressed
+            else if (serverConfig == true)
             {
                 processingChangesLabel.Content = "Terminating Explorer...";
                 await Delay(500);
@@ -181,22 +174,40 @@ namespace beforewindeploy
 
                                 process.StartInfo = startInfo;
                                 process.Start();
+
+                                // Create temp directory and write WiFiTemplate.xml
                                 Directory.CreateDirectory(@"C:\SGBono\Windows 11 Debloated");
-                                File.WriteAllText(@"C:\SGBono\Windows 11 Debloated\SGBono Internal.xml", Properties.Resources.SGBono);
-                                process.StandardInput.WriteLine("wlan add profile filename=\"C:\\SGBono\\Windows 11 Debloated\\SGBono Internal.xml\"");
-                                process.StandardInput.WriteLine($"wlan connect name=\"SGBono Internal\" ssid=\"SGBono Internal\" interface=\"Wi-Fi\"");
+                                File.WriteAllText(@"C:\SGBono\Windows 11 Debloated\WiFiTemplate.xml", Properties.Resources.WiFiTemplate);
+
+                                // Get reference values from Credentials.xml
+                                var ssid = credentials.Root.Element("Router").Element("SSID").Value;
+                                var routerpassword = credentials.Root.Element("Router").Element("Password").Value;
+                                var securityprotocol = credentials.Root.Element("Router").Element("SecurityProtocol").Value;
+                                
+                                // Writes reference values to WiFiTemplate.xml
+                                XNamespace xmlNamespace = "http://www.microsoft.com/networking/WLAN/profile/v1";
+                                XDocument wifiTemplate = XDocument.Load(@"C:\SGBono\Windows 11 Debloated\WiFiTemplate.xml");
+                                wifiTemplate.Root.Element(xmlNamespace + "name").Value = ssid;
+                                wifiTemplate.Root.Element(xmlNamespace + "SSIDConfig").Element(xmlNamespace + "SSID").Element(xmlNamespace + "name").Value = ssid;
+                                wifiTemplate.Root.Element(xmlNamespace + "MSM").Element(xmlNamespace + "security").Element(xmlNamespace + "sharedKey").Element(xmlNamespace + "keyMaterial").Value = routerpassword;
+                                wifiTemplate.Root.Element(xmlNamespace + "MSM").Element(xmlNamespace + "security").Element(xmlNamespace + "authEncryption").Element(xmlNamespace + "authentication").Value = securityprotocol;
+                                wifiTemplate.Save(@"C:\SGBono\Windows 11 Debloated\WiFiTemplate.xml");
+
+                                // Connect to network by importing WiFiTemplate.xml
+                                process.StandardInput.WriteLine("wlan add profile filename=\"C:\\SGBono\\Windows 11 Debloated\\WiFiTemplate.xml\"");
                                 process.StandardInput.Close();
 
                                 ProcessStartInfo connectInfo = new ProcessStartInfo
                                 {
                                     FileName = "netsh",
-                                    Arguments = "wlan connect name=\"SGBono Internal\"",
+                                    Arguments = $"wlan connect name=\"{ssid}\"",
                                     RedirectStandardOutput = true,
                                     RedirectStandardError = true,
                                     UseShellExecute = false,
                                     CreateNoWindow = true
                                 };
 
+                                // Ensures network connection is successful
                                 Process connectProcess = new Process { StartInfo = connectInfo };
                                 connectProcess.Start();
                                 connectProcess.WaitForExit();
@@ -219,14 +230,14 @@ namespace beforewindeploy
 
                                 process.WaitForExit();
                                 break;
-
-
                             }
                         }
                         catch (Exception ex)
                         {
-                            DialogWindow dialogWindow = new DialogWindow("There was an error connecting to the network. " + ex.Message + "\nTry again?", "Error", false);
+                            DialogWindow dialogWindow = new DialogWindow($"There was an error connecting to the network. {ex.Message}\nTry again?", "Error", false);
                             dialogWindow.ShowDialog();
+
+                            //Move to offline install
                             if (dialogWindow.Result == DialogMessageBoxResult.OfflineInstall)
                             {
                                 var message = iNKORE.UI.WPF.Modern.Controls.MessageBox.Show("Are you sure you want to move to offline install?", "Warning", MessageBoxButton.YesNo, MessageBoxImage.Warning);
@@ -239,7 +250,7 @@ namespace beforewindeploy
                                 {
                                     iNKORE.UI.WPF.Modern.Controls.MessageBox.Show("We will now try again.", "Information", MessageBoxButton.OK, MessageBoxImage.Information);
                                 }
-                            }
+                            } // Skip
                             else if (dialogWindow.Result == DialogMessageBoxResult.Skip)
                             {
                                 var message = iNKORE.UI.WPF.Modern.Controls.MessageBox.Show("Are you sure you want to skip?", "Warning", MessageBoxButton.YesNo, MessageBoxImage.Warning);
@@ -254,8 +265,10 @@ namespace beforewindeploy
                                 }
                             }
                         }
-                    } catch (Exception ex)
+                    }
+                    catch (Exception ex)
                     {
+                        // Dummy try-catch block to stop execution of code and move to offline install
                         if (ex.Message == "Moving to offline install!")
                         {
                             return;
@@ -263,6 +276,7 @@ namespace beforewindeploy
                     }
                 }
 
+                // Launch driver installation utility
                 bool driversDone = false;
 
                 while (driversDone == false)
@@ -273,15 +287,14 @@ namespace beforewindeploy
                         {
                             processingChangesLabel.Content = "Connecting to the server...";
                             await Delay(500);
-                            XDocument serverCredentials = XDocument.Load(Environment.SystemDirectory + @"\oobe\Automation\Credentials.xml");
                             await Task.Run(() =>
                             {
-                                var serverCredential = serverCredentials.Root;
-                                var serverUsername = serverCredential.Element("Username").Value;
-                                var serverPassword = serverCredential.Element("Password").Value;
+                                var serverCredential = credentials.Root;
+                                var serverUsername = credentials.Root.Element("Username").Value;
+                                var serverPassword = credentials.Root.Element("Password").Value;
                                 Process mountNetworkDrive = new Process();
                                 mountNetworkDrive.StartInfo.FileName = "net.exe";
-                                mountNetworkDrive.StartInfo.Arguments = $@"use Z: \\SGBonoServ\Drivers /user:{serverUsername} {serverPassword}";
+                                mountNetworkDrive.StartInfo.Arguments = $@"use Z: \\{credentials.Root.Element("VNCPath").Value}\Drivers /user:{serverUsername} {serverPassword}";
                                 mountNetworkDrive.StartInfo.UseShellExecute = false;
                                 mountNetworkDrive.StartInfo.RedirectStandardOutput = true;
                                 mountNetworkDrive.StartInfo.CreateNoWindow = true;
@@ -306,6 +319,8 @@ namespace beforewindeploy
                                 Process.Start(driverInstallServer).WaitForExit();
                             });
 
+                            // There are cases in which the driver utility does not show the missing drivers list correctly when first launched for unknown reasons.
+                            // This block of code will ask the user if the driver utility has launched correctly and prompt the user to relaunch if it has not.
                             var result = iNKORE.UI.WPF.Modern.Controls.MessageBox.Show("Did the driver installation utility launch correctly?", "", MessageBoxButton.YesNo, MessageBoxImage.Question);
                             if (result == MessageBoxResult.No)
                             {
@@ -315,13 +330,12 @@ namespace beforewindeploy
                                 }
                                 processingChangesLabel.Content = "Connecting to the server (2nd attempt)...";
                                 await Delay(500);
-                                //XDocument serverCredentials = XDocument.Load(@"C:\Windows\System32\oobe\Automation\Credentials.xml");
-                                var serverCredential = serverCredentials.Root;
+                                var serverCredential = credentials.Root;
                                 var serverUsername = serverCredential.Element("Username").Value;
                                 var serverPassword = serverCredential.Element("Password").Value;
                                 Process mountNetworkDrive2 = new Process();
                                 mountNetworkDrive2.StartInfo.FileName = "net.exe";
-                                mountNetworkDrive2.StartInfo.Arguments = $@"use Z: \\SGBonoServ\Drivers /user:{serverUsername} {serverPassword}";
+                                mountNetworkDrive2.StartInfo.Arguments = $@"use Z: \\{credentials.Root.Element("VNCPath").Value}\Drivers /user:{serverUsername} {serverPassword}";
                                 mountNetworkDrive2.StartInfo.UseShellExecute = false;
                                 mountNetworkDrive2.StartInfo.RedirectStandardOutput = true;
                                 mountNetworkDrive2.StartInfo.CreateNoWindow = true;
@@ -352,6 +366,8 @@ namespace beforewindeploy
                         {
                             DialogWindow dialogWindow = new DialogWindow("There was an error accessing the server used to host the drivers. " + ex.Message + "\nTry again?", "Error", false);
                             dialogWindow.ShowDialog();
+
+                            // Move to offline install
                             if (dialogWindow.Result == DialogMessageBoxResult.OfflineInstall)
                             {
                                 var message = iNKORE.UI.WPF.Modern.Controls.MessageBox.Show("Are you sure you want to move to offline install?", "Warning", MessageBoxButton.YesNo, MessageBoxImage.Warning);
@@ -364,7 +380,7 @@ namespace beforewindeploy
                                 {
                                     iNKORE.UI.WPF.Modern.Controls.MessageBox.Show("We will now try again.", "Information", MessageBoxButton.OK, MessageBoxImage.Information);
                                 }
-                            }
+                            } // Skip
                             else if (dialogWindow.Result == DialogMessageBoxResult.Skip)
                             {
                                 var message = iNKORE.UI.WPF.Modern.Controls.MessageBox.Show("Are you sure you want to skip?", "Warning", MessageBoxButton.YesNo, MessageBoxImage.Warning);
@@ -378,8 +394,10 @@ namespace beforewindeploy
                                 }
                             }
                         }
-                    } catch (Exception ex)
+                    }
+                    catch (Exception ex)
                     {
+                        // Dummy try-catch block to stop execution of code and move to offline install
                         if (ex.Message == "Moving to offline install!")
                         {
                             return;
@@ -388,13 +406,12 @@ namespace beforewindeploy
                 }
 
                 // Install apps
-                XDocument credentials = XDocument.Load(Environment.SystemDirectory + @"\oobe\Automation\Credentials.xml");
                 var credential = credentials.Root;
                 var username = credential.Element("Username").Value;
                 var password = credential.Element("Password").Value;
                 Process mountNetworkDrive3 = new Process();
                 mountNetworkDrive3.StartInfo.FileName = "net.exe";
-                mountNetworkDrive3.StartInfo.Arguments = $@"use Y: \\SGBonoServ\Software /user:{username} {password}";
+                mountNetworkDrive3.StartInfo.Arguments = $@"use Y: \\{credentials.Root.Element("VNCPath").Value}\Software /user:{username} {password}";
                 mountNetworkDrive3.StartInfo.UseShellExecute = false;
                 mountNetworkDrive3.StartInfo.RedirectStandardOutput = true;
                 mountNetworkDrive3.StartInfo.CreateNoWindow = true;
@@ -404,6 +421,7 @@ namespace beforewindeploy
                 XDocument programsList = XDocument.Load(@"Y:\ProgramsList.xml");
                 try
                 {
+                    // Iterate through XML file on server and install every program
                     foreach (var program in programsList.Root.Elements())
                     {
                         bool programInstalled = false;
@@ -418,6 +436,8 @@ namespace beforewindeploy
                             {
                                 processingChangesLabel.Content = $"Installing {name}...";
                                 await Delay(500);
+
+                                // If path is not empty, run the installer using the path element
                                 if (!string.IsNullOrEmpty(path))
                                 {
                                     Process setup = new Process();
@@ -433,6 +453,7 @@ namespace beforewindeploy
                                 }
                                 else
                                 {
+                                    // If path is empty, run the installer using the run element
                                     if (string.IsNullOrEmpty(run))
                                     {
                                         throw new Exception("The XML file was not configured correctly - both path and run elements are missing.");
@@ -453,6 +474,8 @@ namespace beforewindeploy
                             {
                                 DialogWindow dialogWindow = new DialogWindow($"There was an error installing {name}. " + ex.Message + "\nTry again?", "Error", false);
                                 dialogWindow.ShowDialog();
+
+                                // Move to offline install
                                 if (dialogWindow.Result == DialogMessageBoxResult.OfflineInstall)
                                 {
                                     var message = iNKORE.UI.WPF.Modern.Controls.MessageBox.Show("Are you sure you want to move to offline install?", "Warning", MessageBoxButton.YesNo, MessageBoxImage.Warning);
@@ -465,7 +488,7 @@ namespace beforewindeploy
                                     {
                                         iNKORE.UI.WPF.Modern.Controls.MessageBox.Show("We will now try again.", "Information", MessageBoxButton.OK, MessageBoxImage.Information);
                                     }
-                                }
+                                } // Skip
                                 else if (dialogWindow.Result == DialogMessageBoxResult.Skip)
                                 {
                                     var message = iNKORE.UI.WPF.Modern.Controls.MessageBox.Show("Are you sure you want to skip?", "Warning", MessageBoxButton.YesNo, MessageBoxImage.Warning);
@@ -479,6 +502,8 @@ namespace beforewindeploy
                                     }
                                 }
                             }
+
+                            // Run custom C# code if it exists
                             processingChangesLabel.Content = $"Running package scripts for {name}...";
                             await Delay(500);
                             await Task.Run(() =>
@@ -491,9 +516,11 @@ namespace beforewindeploy
                                 {
                                     CompilerParameters parameters = new CompilerParameters();
                                     parameters.ReferencedAssemblies.Add("System.dll");
-                                    parameters.ReferencedAssemblies.Add(Environment.SystemDirectory + @"\oobe\Automation\Interop.IWshRuntimeLibrary.dll");
+                                    parameters.ReferencedAssemblies.Add(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location) + @"\Interop.IWshRuntimeLibrary.dll");
                                     parameters.GenerateInMemory = true;
                                     CompilerResults results = new CSharpCodeProvider().CompileAssemblyFromSource(parameters, customcscode);
+                                    
+                                    // Error handling
                                     if (results.Errors.Count > 0)
                                     {
                                         foreach (CompilerError error in results.Errors)
@@ -502,6 +529,8 @@ namespace beforewindeploy
                                             {
                                                 DialogWindow dialogWindow = new DialogWindow($"There was an error running package scripts for {name}. " + error.ErrorText + ". \nTry again?", "Error", false);
                                                 dialogWindow.ShowDialog();
+
+                                                // Move to offline install
                                                 if (dialogWindow.Result == DialogMessageBoxResult.OfflineInstall)
                                                 {
                                                     var message = iNKORE.UI.WPF.Modern.Controls.MessageBox.Show("Are you sure you want to move to offline install?", "Warning", MessageBoxButton.YesNo, MessageBoxImage.Warning);
@@ -514,7 +543,7 @@ namespace beforewindeploy
                                                     {
                                                         iNKORE.UI.WPF.Modern.Controls.MessageBox.Show("We will now try again.", "Information", MessageBoxButton.OK, MessageBoxImage.Information);
                                                     }
-                                                }
+                                                } // Skip
                                                 else if (dialogWindow.Result == DialogMessageBoxResult.Skip)
                                                 {
                                                     var message = iNKORE.UI.WPF.Modern.Controls.MessageBox.Show("Are you sure you want to skip?", "Warning", MessageBoxButton.YesNo, MessageBoxImage.Warning);
@@ -532,6 +561,7 @@ namespace beforewindeploy
                                     }
                                     else
                                     {
+                                        // Run custom C# code if there are no errors
                                         Type customType = results.CompiledAssembly.GetType("CustomCode");
                                         MethodInfo method = customType.GetMethod("Execute");
                                         method.Invoke(null, null);
@@ -541,8 +571,10 @@ namespace beforewindeploy
                             });
                         }
                     };
-                } catch (Exception ex)
+                }
+                catch (Exception ex)
                 {
+                    // Dummy try-catch block to stop execution of code and move to offline install
                     if (ex.Message == "Moving to offline install!")
                     {
                         return;
@@ -551,6 +583,7 @@ namespace beforewindeploy
 
                 try
                 {
+                    // Generate system report
                     processingChangesLabel.Content = "Generating system report...";
                     await Delay(500);
 
@@ -725,8 +758,9 @@ namespace beforewindeploy
                         batteryHealth = "Battery health: " + batteryHealthPercentage + "%";
                     }
 
+                    // Save system report to desktop
                     File.WriteAllText(Environment.GetFolderPath(Environment.SpecialFolder.Desktop) + @"\System Report.txt", $"======System Report======\n\n<Note the following down>\n{cpuName}\n{gpuName}\n{ramInfo}\n{storageSize}\n{batteryHealth}\n\n<Additional information>\nOriginal battery capacity: {Math.Round((double)designCapacity / 1000)}Wh\nFull charge capacity: {Math.Round((double)fullChargeCapacity / 1000)}Wh");
-                    Process.Start("notepad.exe", Environment.GetFolderPath(Environment.SpecialFolder.Desktop) + @"\System Report.txt").WaitForExit();
+                    Process.Start("notepad.exe", Environment.GetFolderPath(Environment.SpecialFolder.Desktop) + @"\System Report.txt");
                     //iNKORE.UI.WPF.Modern.Controls.MessageBox.Show($"The system report has been saved to {Environment.GetFolderPath(Environment.SpecialFolder.Desktop) + @"\System Report.txt"}.", "Information", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
                 catch
@@ -756,6 +790,7 @@ namespace beforewindeploy
 
                 try
                 {
+                    // Clean up
                     processingChangesLabel.Content = "Cleaning Up...";
                     await Delay(500);
                     Process process = new Process();
@@ -768,7 +803,7 @@ namespace beforewindeploy
                     process.WaitForExit();
                     Process process2 = new Process();
                     process2.StartInfo.FileName = "netsh";
-                    process2.StartInfo.Arguments = "wlan delete profile name=\"SGBono Internal\"";
+                    process2.StartInfo.Arguments = $"wlan delete profile name=\"{credentials.Root.Element("Router").Element("SSID").Value}\"";
                     process2.StartInfo.RedirectStandardOutput = true;
                     process2.StartInfo.UseShellExecute = false;
                     process2.StartInfo.CreateNoWindow = true;
@@ -793,7 +828,7 @@ namespace beforewindeploy
                 await Delay(5000);
                 Process process3 = new Process();
                 process3.StartInfo.FileName = "cmd.exe";
-                process3.StartInfo.Arguments = @"/c timeout /t 10 && rd ""C:\Windows\System32\oobe\Automation"" /s /q";
+                process3.StartInfo.Arguments = $@"/c timeout /t 10 && rd ""{Path.GetDirectoryName(Assembly.GetEntryAssembly().Location)}"" /s /q";
                 process3.StartInfo.CreateNoWindow = true;
                 process3.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
                 process3.Start();
@@ -809,26 +844,12 @@ namespace beforewindeploy
             await Task.Delay(howlong);
         }
 
-        private IntPtr _windowHandle;
-        IntPtr handle;
-        private void Window_Loaded(object sender, RoutedEventArgs e)
-        {
-            _windowHandle = new WindowInteropHelper(this).Handle;
-            if (_windowHandle == null)
-                throw new InvalidOperationException("The window has not yet been completely initialized");
-
-            menuHandle = GetSystemMenu(_windowHandle, false);
-            if (menuHandle != IntPtr.Zero)
-            {
-                EnableMenuItem(menuHandle, SC_CLOSE, MF_BYCOMMAND | MF_GRAYED);
-            }
-        }
-
         private void MoveToOfflineInstall()
         {
             bool validDriverUSB = false;
             while (validDriverUSB == false)
             {
+                // Check if driver disk and required files are present
                 var message = iNKORE.UI.WPF.Modern.Controls.MessageBox.Show("Please insert the disk labelled Drivers and click OK.", "Insert Disk", MessageBoxButton.OK, MessageBoxImage.Information);
                 if (message == MessageBoxResult.OK)
                 {
@@ -859,6 +880,7 @@ namespace beforewindeploy
             }
         }
 
+        // USB Config
         private async void USBConfig()
         {
             try
@@ -871,6 +893,8 @@ namespace beforewindeploy
                     {
                         processingChangesLabel.Content = "Launching driver install utility...";
                         await Delay(500);
+
+                        // Iterate through all drive letters and search for drivers disk
                         for (char c = 'D'; c <= 'Z'; c++)
                         {
                             try
@@ -898,7 +922,7 @@ namespace beforewindeploy
                                     catch (Exception ex)
                                     {
                                         //iNKORE.UI.WPF.Modern.Controls.MessageBox.Show("An unknown error occurred while attempting to launch the driver install utility.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                                        DialogWindow dialogWindow = new DialogWindow($"An error occurred while attempting to launch the driver install utility. "+ex.Message+"\nTry again?", "Error", true);
+                                        DialogWindow dialogWindow = new DialogWindow($"An error occurred while attempting to launch the driver install utility. " + ex.Message + "\nTry again?", "Error", true);
                                         dialogWindow.ShowDialog();
                                         if (dialogWindow.Result == DialogMessageBoxResult.Skip)
                                         {
@@ -914,7 +938,8 @@ namespace beforewindeploy
                                                 ignoreError = true;
                                                 throw new Exception("Moving to offline install!");
                                             }
-                                        } else
+                                        }
+                                        else
                                         {
                                             MoveToOfflineInstall();
                                             ignoreError = true;
@@ -931,6 +956,8 @@ namespace beforewindeploy
                                     //iNKORE.UI.WPF.Modern.Controls.MessageBox.Show("Your installation USB does not come with drivers. Please find a driver installation USB and install the drivers manually.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                                     DialogWindow dialogWindow = new DialogWindow($"Your installation USB does not come with drivers.", "Error", true);
                                     dialogWindow.ShowDialog();
+
+                                    // Redo the entire offline install process when "try again" is pressed - easiest way to implement this
                                     if (dialogWindow.Result == DialogMessageBoxResult.TryAgain)
                                     {
                                         MoveToOfflineInstall();
@@ -986,7 +1013,7 @@ namespace beforewindeploy
                             }
                         }
                     }
-                    catch (Exception ex) 
+                    catch (Exception ex)
                     {
                         if (ex.Message == "Moving to offline install!")
                         {
@@ -1016,6 +1043,7 @@ namespace beforewindeploy
 
                     try
                     {
+                        // System report generation
                         processingChangesLabel.Content = "Generating system report...";
                         await Delay(500);
 
@@ -1213,9 +1241,11 @@ namespace beforewindeploy
                             batteryHealth = "Battery health: " + batteryHealthPercentage + "%";
                         }
 
+                        // Save system report to desktop
                         File.WriteAllText(Environment.GetFolderPath(Environment.SpecialFolder.Desktop) + @"\System Report.txt", $"======System Report======\n\n<Note the following down>\n{cpuName}\n{gpuName}\n{ramInfo}\n{storageSize}\n{batteryHealth}\n\n<Additional information>\nOriginal battery capacity: {Math.Round((double)designCapacity / 1000)}Wh\nFull charge capacity: {Math.Round((double)fullChargeCapacity / 1000)}Wh");
-                        Process.Start("notepad.exe", Environment.GetFolderPath(Environment.SpecialFolder.Desktop) + @"\System Report.txt").WaitForExit();
-                    } catch
+                        Process.Start("notepad.exe", Environment.GetFolderPath(Environment.SpecialFolder.Desktop) + @"\System Report.txt");
+                    }
+                    catch
                     {
                         iNKORE.UI.WPF.Modern.Controls.MessageBox.Show("There was an error generating the system report.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     }
@@ -1234,6 +1264,7 @@ namespace beforewindeploy
 
                     try
                     {
+                        // Clean up
                         processingChangesLabel.Content = "Cleaning Up...";
                         await Delay(500);
                         Process process = new Process();
@@ -1246,7 +1277,7 @@ namespace beforewindeploy
                         process.WaitForExit();
                         Process process2 = new Process();
                         process2.StartInfo.FileName = "netsh";
-                        process2.StartInfo.Arguments = "wlan delete profile name=\"SGBono-Hotspot\"";
+                        process2.StartInfo.Arguments = $"wlan delete profile name=\"{credentials.Root.Element("Router").Element("SSID").Value}\"";
                         process2.StartInfo.RedirectStandardOutput = true;
                         process2.StartInfo.UseShellExecute = false;
                         process2.StartInfo.CreateNoWindow = true;
@@ -1263,7 +1294,7 @@ namespace beforewindeploy
                     await Delay(5000);
                     Process process3 = new Process();
                     process3.StartInfo.FileName = "cmd.exe";
-                    process3.StartInfo.Arguments = @"/c timeout /t 10 && rd ""C:\Windows\System32\oobe\Automation"" /s /q";
+                    process3.StartInfo.Arguments = $@"/c timeout /t 10 && rd ""{Path.GetDirectoryName(Assembly.GetEntryAssembly().Location)}"" /s /q";
                     process3.StartInfo.CreateNoWindow = true;
                     process3.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
                     process3.Start();
@@ -1285,10 +1316,25 @@ namespace beforewindeploy
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
             e.Cancel = true;
+            var result = iNKORE.UI.WPF.Modern.Controls.MessageBox.Show("Are you sure you want to exit?", "Exit", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+            if (result == MessageBoxResult.Yes)
+            {
+                var result2 = iNKORE.UI.WPF.Modern.Controls.MessageBox.Show("Do you want to restart the app?", "Exit", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+                if (result2 == MessageBoxResult.Yes)
+                {
+                    Process process = new Process();
+                    process.StartInfo.FileName = Assembly.GetExecutingAssembly().Location;
+                    process.StartInfo.Verb = "runas";
+                    process.Start();
+                }
+                Process.GetCurrentProcess().Kill();
+            }
         }
 
+        // Event handler for when the mute button is clicked
         private void muteButton_Click(object sender, RoutedEventArgs e)
         {
+            // Toggle the mute state of the default audio device
             defaultDevice.AudioEndpointVolume.Mute = !defaultDevice.AudioEndpointVolume.Mute;
             if (defaultDevice.AudioEndpointVolume.Mute == true)
             {
@@ -1312,6 +1358,7 @@ namespace beforewindeploy
             }
         }
 
+        // Event handler for when the default device volume changes
         private void OnVolumeNotification(AudioVolumeNotificationData data)
         {
             // Check if invoking is required (i.e., if we're not on the UI thread)
@@ -1322,6 +1369,7 @@ namespace beforewindeploy
                 return;
             }
 
+            // Toggle the mute state of the default audio device
             if (defaultDevice.AudioEndpointVolume.Mute == true)
             {
                 muteButton.Content = new Image

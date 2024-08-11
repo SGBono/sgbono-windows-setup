@@ -10,7 +10,7 @@
         ui:ThemeManager.RequestedTheme="Dark"
         Title="DialogWindow" Height="180" Width="500" MaxHeight="180" MaxWidth="500" MinHeight="180" MinWidth="500" ResizeMode="NoResize" WindowStartupLocation="CenterScreen" Closing="Window_Closing" KeyDown="Window_KeyDown">
     <Grid>
-        <Image Source="/imageres_98.ico" Height="32" Width="32" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="40,30,0,0" />
+        <Image x:Name="messageIcon" Source="/imageres_98.ico" Height="32" Width="32" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="40,30,0,0" />
         <TextBlock x:Name="messageContent" TextWrapping="WrapWithOverflow" Margin="88,32,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" FontSize="18" SizeChanged="messageContent_SizeChanged" MaxWidth="392">
             Message
         </TextBlock>

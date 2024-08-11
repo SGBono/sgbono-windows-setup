@@ -21,9 +21,8 @@ namespace beforewindeploy
     /// </summary>
     public partial class DialogWindow : Window
     {
-        private string titleToSet;
-        private string messageToSet;
         private bool canClose = false;
+        
         public enum DialogMessageBoxResult
         {
             TryAgain,

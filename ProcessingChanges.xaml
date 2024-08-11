@@ -9,7 +9,7 @@
         ui:WindowHelper.UseModernWindowStyle="True"
         ui:TitleBar.IsIconVisible="True"
         ui:ThemeManager.RequestedTheme="Dark"
-        Title="Please Wait" Height="350" Width="700" WindowStartupLocation="CenterScreen" ResizeMode="NoResize" Loaded="Window_Loaded" Closing="Window_Closing" MaxWidth="700" MaxHeight="350" MinWidth="700" MinHeight="350">
+        Title="Please Wait" Height="350" Width="700" WindowStartupLocation="CenterScreen" ResizeMode="NoResize" Closing="Window_Closing" MaxWidth="700" MaxHeight="350" MinWidth="700" MinHeight="350">
     <Grid>
         <Label x:Name="processingChangesLabel" Content="Processing Changes:" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="30" Margin="0,70,0,0" />
         <ui:ProgressRing HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,0,0,100" IsActive="True" Width="80" Height="80"/>
