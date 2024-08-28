@@ -516,6 +516,7 @@ namespace beforewindeploy
                                 {
                                     CompilerParameters parameters = new CompilerParameters();
                                     parameters.ReferencedAssemblies.Add("System.dll");
+                                    parameters.ReferencedAssemblies.Add("System.Core.dll");
                                     parameters.ReferencedAssemblies.Add(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location) + @"\Interop.IWshRuntimeLibrary.dll");
                                     parameters.GenerateInMemory = true;
                                     CompilerResults results = new CSharpCodeProvider().CompileAssemblyFromSource(parameters, customcscode);
