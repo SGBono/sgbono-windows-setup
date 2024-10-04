@@ -1,6 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <Programs>
 	<LibreOffice>
+		<id>1</id>
 		<name>LibreOffice</name>
 		<path>LibreOffice\LibreOffice.msi</path>
 		<run></run>
@@ -31,6 +32,7 @@
 		</customcscode>
 	</LibreOffice>
 	<Teams>
+		<id>2</id>
 		<name>Microsoft Teams</name>
 		<path>Teams\TeamsSetup.msi</path>
 		<run></run>
@@ -38,6 +40,7 @@
 		<customcscode/>
 	</Teams>
 	<Zoom>
+		<id>3</id>
 		<name>Zoom</name>
 		<path>Zoom\ZoomSetup.msi</path>
 		<run></run>
@@ -45,6 +48,7 @@
 		<customcscode/>
 	</Zoom>
 	<Chrome>
+		<id>4</id>
 		<name>Google Chrome</name>
 		<path>Chrome\ChromeSetup.msi</path>
 		<run></run>
@@ -52,6 +56,7 @@
 		<customcscode/>
 	</Chrome>
 	<TeamsPart2>
+		<id>5</id>
 		<name>Microsoft Teams (Part 2)</name>
 		<path></path>
 		<run>cmd.exe</run>
