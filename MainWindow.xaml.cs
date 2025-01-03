@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Media;
 using System.Reflection;
@@ -29,7 +30,7 @@ namespace beforewindeploy
             this.Topmost = true;
             try
             {
-                soundPlayer.SoundLocation = @"C:\Windows\System32\oobe\Automation\title.wav";
+                soundPlayer.SoundLocation = $@"{Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)}\title.wav";
                 soundPlayer.PlayLooping();
             }
             catch { }
