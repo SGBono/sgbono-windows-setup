@@ -99,8 +99,8 @@ namespace beforewindeploy
             await Task.Delay(500);
             ProcessStartInfo disablePasswordExpiry = new ProcessStartInfo()
             {
-                FileName = "wmic.exe",
-                Arguments = "useraccount set PasswordExpires=false",
+                FileName = "powershell.exe",
+                Arguments = "Get-LocalUser | ForEach-Object { Set-LocalUser -Name $_.Name -PasswordNeverExpires 1 }",
                 WindowStyle = ProcessWindowStyle.Hidden,
                 CreateNoWindow = true
             };
