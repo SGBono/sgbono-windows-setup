@@ -7,13 +7,18 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <Authors>SGBono Software Development</Authors>
     <Copyright>Copyright © SGBono</Copyright>
-    <SignAssembly>false</SignAssembly>
-    <DelaySign></DelaySign>
+    <SignAssembly>False</SignAssembly>
+    <DelaySign>False</DelaySign>
     <PlatformTarget>AnyCPU</PlatformTarget>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <PlatformTarget>AnyCPU</PlatformTarget>
+    <PreferNativeArm64>True</PreferNativeArm64>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <PreferNativeArm64>True</PreferNativeArm64>
   </PropertyGroup>
 
   <ItemGroup>
