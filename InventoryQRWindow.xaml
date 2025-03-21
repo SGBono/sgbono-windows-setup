@@ -1,0 +1,34 @@
+﻿<Window x:Class="beforewindeploy.InventoryQRWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:beforewindeploy"
+        mc:Ignorable="d"
+        xmlns:ui="http://schemas.inkore.net/lib/ui/wpf/modern"
+        ui:WindowHelper.UseModernWindowStyle="True"
+        ui:TitleBar.IsIconVisible="True"
+        ui:ThemeManager.RequestedTheme="Default"
+        Title="Inventory Tracking" Height="630" Width="800" WindowStartupLocation="CenterScreen" ResizeMode="NoResize" MaxWidth="800" MaxHeight="630" MinWidth="800" MinHeight="630" WindowStyle="SingleBorderWindow">
+    <Grid>
+        <StackPanel>
+            <Label Content="Scan the following QR code for inventory tracking" FontSize="28" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,20,0,0" FontWeight="Bold" FontFamily="Segoe UI Variable Display"/>
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,20,0,0">
+                <Image Source="/qr-code (1).png" Width="200" Height="200" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                <CheckBox x:Name="issueCheckBox" Content="This device has an issue." Margin="0,20,0,0" Checked="issueCheckBox_Checked" Unchecked="issueCheckBox_Unchecked"/>
+                <ListBox x:Name="fixList" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="0,12,0,0" Height="130" IsEnabled="False">
+                    <CheckBox x:Name="phydmg" Content="Physical damage (dents/rubber deteroriating)" Checked="CheckBox_Checked"/>
+                    <CheckBox x:Name="battdmg" Content="Battery issue (low battery health/missing battery/spicy pillow)" Checked="CheckBox_Checked"/>
+                    <CheckBox x:Name="sounddmg" Content="Speakers bad/non-functional" Checked="CheckBox_Checked"/>
+                    <CheckBox x:Name="keydmg" Content="Keys missing/non-functional" Checked="CheckBox_Checked"/>
+                    <CheckBox x:Name="touchpaddmg" Content="Touchpad/touchpad buttons damaged/non-functional" Checked="CheckBox_Checked"/>
+                    <CheckBox x:Name="screendmg" Content="Screen cracked/discolouration/malfunctioning" Checked="CheckBox_Checked"/>
+                    <CheckBox x:Name="hingedmg" Content="Hinge problems" Checked="CheckBox_Checked"/>
+                    <CheckBox x:Name="other" Content="Other" Checked="CheckBox_Checked"/>
+                </ListBox>
+                <Label Content="Remarks" Margin="0,20,0,5"/>
+                <TextBox x:Name="remarksTextBox" Height="50" Width="450" TextWrapping="Wrap" AcceptsReturn="True"/>
+            </StackPanel>
+        </StackPanel>
+    </Grid>
+</Window>
