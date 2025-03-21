@@ -27,7 +27,7 @@
                     <CheckBox x:Name="other" Content="Other" Checked="CheckBox_Checked" Unchecked="CheckBox_Unchecked"/>
                 </ListBox>
                 <Label Content="Remarks" Margin="0,20,0,5"/>
-                <TextBox x:Name="remarksTextBox" Height="50" Width="450" TextWrapping="Wrap" AcceptsReturn="True"/>
+                <TextBox x:Name="remarksTextBox" Height="50" Width="450" TextWrapping="Wrap" AcceptsReturn="True" TextChanged="remarksTextBox_TextChanged"/>
             </StackPanel>
         </StackPanel>
     </Grid>

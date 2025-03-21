@@ -20,6 +20,12 @@ namespace beforewindeploy
         public InventoryQRWindow()
         {
             InitializeComponent();
+            // Serial Number
+            ManagementObjectSearcher bios = new ManagementObjectSearcher("root\\CIMV2", "SELECT * FROM Win32_BIOS");
+            foreach (ManagementObject obj in bios.Get())
+            {
+                embeddedData.SerialNumber = obj["SerialNumber"].ToString();
+            }
             GenerateQRCode();
         }
 
@@ -57,7 +63,7 @@ namespace beforewindeploy
         private void CheckBox_Checked(object sender, RoutedEventArgs e)
         {
             CheckBox checkBox = sender as CheckBox;
-            if (embeddedData.Issues.FirstOrDefault(x => x == checkBox.Content.ToString()) == null)
+            if (embeddedData.Issues.FirstOrDefault(x => x == checkBox.Name.ToString()) == null)
             {
                 embeddedData.Issues.Add(checkBox.Name.ToString());
             }
@@ -67,13 +73,6 @@ namespace beforewindeploy
         private void GenerateQRCode()
         {
             embeddedData.Specifications = SystemInfo.Get();
-
-            // Serial Number
-            ManagementObjectSearcher bios = new ManagementObjectSearcher("root\\CIMV2", "SELECT * FROM Win32_BIOS");
-            foreach (ManagementObject obj in bios.Get())
-            {
-                embeddedData.SerialNumber = obj["SerialNumber"].ToString();
-            }
 
             string data = JsonSerializer.Serialize(embeddedData);
 
@@ -90,10 +89,14 @@ namespace beforewindeploy
         private void CheckBox_Unchecked(object sender, RoutedEventArgs e)
         {
             CheckBox checkBox = sender as CheckBox;
-            if (embeddedData.Issues.FirstOrDefault(x => x == checkBox.Content.ToString()) != null)
-            {
-                embeddedData.Issues.Remove(checkBox.Name.ToString());
-            }
+            embeddedData.Issues.Remove(checkBox.Name.ToString());
+            GenerateQRCode();
+        }
+
+        private void remarksTextBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            TextBox textBox = sender as TextBox;
+            embeddedData.Remarks = textBox.Text;
             GenerateQRCode();
         }
     }

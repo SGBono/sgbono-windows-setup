@@ -28,7 +28,7 @@ namespace beforewindeploy
             ManagementObjectSearcher mos = new ManagementObjectSearcher("root\\CIMV2", "SELECT * FROM Win32_Processor");
             foreach (ManagementObject mo in mos.Get())
             {
-                cpuName = $"{(string)mo["Name"]}".Replace("(R)", "").Replace("(TM)", "");
+                cpuName = $"{(string)mo["Name"]}".Replace("(R)", "").Replace("(TM)", "").Trim();
             }
 
             //GPU
