@@ -14,17 +14,17 @@
         <StackPanel>
             <Label Content="Scan the following QR code for inventory tracking" FontSize="28" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,20,0,0" FontWeight="Bold" FontFamily="Segoe UI Variable Display"/>
             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,20,0,0">
-                <Image Source="/qr-code (1).png" Width="200" Height="200" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                <Image x:Name="qrCode" Source="/qr-code (1).png" Width="200" Height="200" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                 <CheckBox x:Name="issueCheckBox" Content="This device has an issue." Margin="0,20,0,0" Checked="issueCheckBox_Checked" Unchecked="issueCheckBox_Unchecked"/>
                 <ListBox x:Name="fixList" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="0,12,0,0" Height="130" IsEnabled="False">
-                    <CheckBox x:Name="phydmg" Content="Physical damage (dents/rubber deteroriating)" Checked="CheckBox_Checked"/>
-                    <CheckBox x:Name="battdmg" Content="Battery issue (low battery health/missing battery/spicy pillow)" Checked="CheckBox_Checked"/>
-                    <CheckBox x:Name="sounddmg" Content="Speakers bad/non-functional" Checked="CheckBox_Checked"/>
-                    <CheckBox x:Name="keydmg" Content="Keys missing/non-functional" Checked="CheckBox_Checked"/>
-                    <CheckBox x:Name="touchpaddmg" Content="Touchpad/touchpad buttons damaged/non-functional" Checked="CheckBox_Checked"/>
-                    <CheckBox x:Name="screendmg" Content="Screen cracked/discolouration/malfunctioning" Checked="CheckBox_Checked"/>
-                    <CheckBox x:Name="hingedmg" Content="Hinge problems" Checked="CheckBox_Checked"/>
-                    <CheckBox x:Name="other" Content="Other" Checked="CheckBox_Checked"/>
+                    <CheckBox x:Name="phydmg" Content="Physical damage (dents/rubber deteroriating)" Checked="CheckBox_Checked" Unchecked="CheckBox_Unchecked"/>
+                    <CheckBox x:Name="battdmg" Content="Battery issue (low battery health/missing battery/spicy pillow)" Checked="CheckBox_Checked" Unchecked="CheckBox_Unchecked"/>
+                    <CheckBox x:Name="sounddmg" Content="Speakers bad/non-functional" Checked="CheckBox_Checked" Unchecked="CheckBox_Unchecked"/>
+                    <CheckBox x:Name="keydmg" Content="Keys missing/non-functional" Checked="CheckBox_Checked" Unchecked="CheckBox_Unchecked"/>
+                    <CheckBox x:Name="touchpaddmg" Content="Touchpad/touchpad buttons damaged/non-functional" Checked="CheckBox_Checked" Unchecked="CheckBox_Unchecked"/>
+                    <CheckBox x:Name="screendmg" Content="Screen cracked/discolouration/malfunctioning" Checked="CheckBox_Checked" Unchecked="CheckBox_Unchecked"/>
+                    <CheckBox x:Name="hingedmg" Content="Hinge problems" Checked="CheckBox_Checked" Unchecked="CheckBox_Unchecked"/>
+                    <CheckBox x:Name="other" Content="Other" Checked="CheckBox_Checked" Unchecked="CheckBox_Unchecked"/>
                 </ListBox>
                 <Label Content="Remarks" Margin="0,20,0,5"/>
                 <TextBox x:Name="remarksTextBox" Height="50" Width="450" TextWrapping="Wrap" AcceptsReturn="True"/>
