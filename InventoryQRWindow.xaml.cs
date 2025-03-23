@@ -20,11 +20,20 @@ namespace beforewindeploy
         public InventoryQRWindow()
         {
             InitializeComponent();
+            
             // Serial Number
             ManagementObjectSearcher bios = new ManagementObjectSearcher("root\\CIMV2", "SELECT * FROM Win32_BIOS");
             foreach (ManagementObject obj in bios.Get())
             {
                 embeddedData.SerialNumber = obj["SerialNumber"].ToString();
+            }
+            
+            // Model
+            ManagementObjectSearcher computerSystem = new ManagementObjectSearcher("root\\CIMV2", "SELECT * FROM Win32_ComputerSystem");
+            foreach (ManagementObject obj in computerSystem.Get())
+            {
+                embeddedData.Manufacturer = obj["Manufacturer"].ToString();
+                embeddedData.Model = obj["Model"].ToString();
             }
             GenerateQRCode();
         }
@@ -33,7 +42,13 @@ namespace beforewindeploy
         {
             public double Version { get; set; }
 
+            public readonly DateTime InstallDate = DateTime.Now;
+
             public string SerialNumber { get; set; }
+
+            public string Manufacturer { get; set; }
+            
+            public string Model { get; set; }
 
             public Dictionary<string, string> Specifications { get; set; }
 
