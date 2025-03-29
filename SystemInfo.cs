@@ -163,7 +163,7 @@ namespace beforewindeploy
                 }
             }
 
-            ramInfo = $"RAM: {newram} GB {newMemoryType}-{ramspeed}";
+            ramInfo = $"{newram} GB {newMemoryType}-{ramspeed}";
 
             //Storage
             DriveInfo mainDrive = new DriveInfo(System.IO.Path.GetPathRoot(Environment.GetFolderPath(Environment.SpecialFolder.System)));
