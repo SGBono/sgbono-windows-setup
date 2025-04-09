@@ -418,6 +418,9 @@ namespace beforewindeploy
                     }
                 }
 
+                InventoryQRWindow inventoryQRWindow = new InventoryQRWindow();
+                inventoryQRWindow.ShowDialog();
+
                 GenerateSystemReport();
 
                 try

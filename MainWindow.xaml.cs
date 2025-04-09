@@ -27,8 +27,6 @@ namespace beforewindeploy
         public MainWindow()
         {
             InitializeComponent();
-            InventoryQRWindow inventoryQRWindow = new InventoryQRWindow();
-            inventoryQRWindow.ShowDialog();
             this.Topmost = true;
             try
             {
